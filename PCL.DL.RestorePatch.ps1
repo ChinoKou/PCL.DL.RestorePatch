@@ -1,8 +1,7 @@
 ﻿<#
 免责声明
 
-1. 本脚本仅供个人学习、研究与技术交流使用，不得用于商业用途，也不得用于
-   大规模分发、二次打包、售卖或任何形式的牟利行为。
+1. 本脚本仅供个人学习、研究与技术交流使用，不得用于商业用途，也不得用于售卖或任何形式的牟利行为。如需二次分发，请仅限个人非商业用途，保留完整免责声明与出处，不得大规模传播或用于商业目的。
 2. 本脚本不是 PCL 官方产物，与 PCL 开发者无关。它只修改本机 PCL 副本的
    方法体；不包含、也不分发 PCL 的任何代码或二进制文件。
 3. PCL 移除这些功能是开发者为遵守相关法律法规所做的决定。使用本脚本可能
@@ -40,22 +39,29 @@ RestrictMcDownload 是编译期常量，发布版中相关分支已被常量折�
 输入 exe 需为 PCL 2.99.x；版本、方法布局、局部变量、安装器签名或入口结构
 不符时在写盘前失败，不会产出半成品。
 
-依赖 Mono.Cecil 0.11.6（NuGet，SHA256 固定），临时目录用完即删。
+依赖 Mono.Cecil 0.11.6（SHA256 固定），临时目录用完即删。
 
-输出 Plain Craft Launcher 2 (dl-restore).exe，输入文件不改动。
+输出输入 exe 同目录下的 <输入文件名> (dl-restore).exe。输入文件不改动。
 #>
+
+[CmdletBinding()]
+param(
+    [Parameter(Position = 0)]
+    [string]$Path,
+    [string]$CecilDll
+)
 
 $ErrorActionPreference = 'Stop'
 
-$PclDir     = $PSScriptRoot
-$ExePath    = Join-Path $PclDir 'Plain Craft Launcher 2.exe'
-$OutputPath = Join-Path $PclDir 'Plain Craft Launcher 2 (dl-restore).exe'
-$TmpOutput  = $OutputPath + '.tmp'
-$WorkDir    = Join-Path $env:TEMP ('pcl_dl_restore_' + [guid]::NewGuid().ToString('N'))
+$PclExeName = 'Plain Craft Launcher 2.exe'
 
 $CecilVersion     = '0.11.6'
 $CecilNupkgSha256 = 'D2A23832AAA948BA9A01ACC42B5726E34C5F995958F1B30D45C0E7C70B3A72D5'
 $CecilDllSha256   = 'C41BDB9FFD3C5F6E17D2382C1012D73703E035E3F1100245FDD4E08C8DC6EB5B'
+$CecilUrls = @(
+    ('https://api.nuget.org/v3-flatcontainer/mono.cecil/{0}/mono.cecil.{0}.nupkg' -f $CecilVersion),
+    ('https://www.nuget.org/api/v2/package/Mono.Cecil/{0}' -f $CecilVersion)
+)
 
 function Stop-WithError {
     param([string]$Message)
@@ -84,18 +90,26 @@ function Get-Sha256 {
 
 # 下载并校验 Mono.Cecil，返回 DLL 路径
 function Get-CecilLibrary {
-    param([string]$WorkDir)
+    param([string]$WorkDir, [string]$CecilDllPath)
+
+    if (-not [string]::IsNullOrWhiteSpace($CecilDllPath)) {
+        if (-not (Test-Path -LiteralPath $CecilDllPath -PathType Leaf)) {
+            Stop-WithError ('没有找到 Mono.Cecil.dll：' + $CecilDllPath)
+        }
+        $resolvedDll = (Resolve-Path -LiteralPath $CecilDllPath).ProviderPath
+        if ((Get-Sha256 $resolvedDll) -ne $CecilDllSha256) {
+            Stop-WithError ('Mono.Cecil.dll 的 SHA256 与预期不符：' + $resolvedDll)
+        }
+        Write-Step ('Cecil: ' + $resolvedDll)
+        return $resolvedDll
+    }
 
     $dllPath   = Join-Path $WorkDir 'Mono.Cecil.dll'
     $nupkgPath = Join-Path $WorkDir 'mono.cecil.nupkg'
-    $urls = @(
-        ('https://api.nuget.org/v3-flatcontainer/mono.cecil/{0}/mono.cecil.{0}.nupkg' -f $CecilVersion),
-        ('https://www.nuget.org/api/v2/package/Mono.Cecil/{0}' -f $CecilVersion)
-    )
 
     $downloaded = $false
     $lastError = ''
-    foreach ($url in $urls) {
+    foreach ($url in $CecilUrls) {
         $webClient = New-Object Net.WebClient
         try {
             [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
@@ -229,6 +243,7 @@ function Invoke-ModpackDispatchPatch {
         Assert-True ($m3.Parameters[$i].ParameterType.FullName -eq 'System.String') ('ModpackInstall(File,..) 参数 ' + $i + ' 类型不符')
     }
     $body = $m3.Body
+    $script:ModpackHandlerCountBeforePatch = $body.ExceptionHandlers.Count
     Assert-True ($body.Variables.Count -ge 5) 'ModpackInstall(File,..) 局部变量不足 5 个'
 
     # 局部变量：0=返回值, 1=ZipArchive, 2=BaseFolder, 4=PackType
@@ -572,9 +587,8 @@ function Save-PatchedAssembly {
     Write-Step ('写出 ' + $OutputPath)
     $Assembly.Write($TmpPath)
     $Assembly.Dispose()
-    Move-Item -LiteralPath $TmpPath -Destination $OutputPath -Force
 
-    $check = [Mono.Cecil.AssemblyDefinition]::ReadAssembly($OutputPath)
+    $check = [Mono.Cecil.AssemblyDefinition]::ReadAssembly($TmpPath)
     try {
         $checkMod = $check.MainModule
         $checkType = $checkMod.GetType('PCL.ModModpack')
@@ -582,7 +596,7 @@ function Save-PatchedAssembly {
         $check3 = $checkType.Methods | Where-Object { $_.Name -eq 'ModpackInstall' -and $_.Parameters.Count -eq 3 } | Select-Object -First 1
         $check0 = $checkType.Methods | Where-Object { $_.Name -eq 'ModpackInstall' -and $_.Parameters.Count -eq 0 } | Select-Object -First 1
         Assert-True ($null -ne $check3 -and $null -ne $check0) '回读：ModpackInstall 缺失'
-        Assert-True ($check3.Body.ExceptionHandlers.Count -eq 3) '回读：异常处理块数量异常'
+        Assert-True ($check3.Body.ExceptionHandlers.Count -eq $script:ModpackHandlerCountBeforePatch) ('回读：异常处理块数量异常（' + $check3.Body.ExceptionHandlers.Count + ' != ' + $script:ModpackHandlerCountBeforePatch + '）')
         $hasSwitch = $false
         foreach ($instr in $check3.Body.Instructions) { if ($instr.OpCode.Code -eq $Code::Switch) { $hasSwitch = $true } }
         Assert-True $hasSwitch '回读：分发 switch 缺失'
@@ -634,13 +648,40 @@ function Save-PatchedAssembly {
     } finally {
         $check.Dispose()
     }
+    Move-Item -LiteralPath $TmpPath -Destination $OutputPath -Force
 }
 
 # ---------------- 主流程 ----------------
 
-if (-not (Test-Path -LiteralPath $ExePath)) {
+# 目标 exe：无参数时用脚本同目录的默认文件；有参数时接受 exe 文件或目录
+$targetPath = if ([string]::IsNullOrWhiteSpace($Path)) {
+    Join-Path $PSScriptRoot $PclExeName
+} else {
+    $Path
+}
+
+$targetItem = Get-Item -LiteralPath $targetPath -ErrorAction SilentlyContinue
+if ($null -eq $targetItem) {
+    Stop-WithError ('路径不存在：' + $targetPath)
+}
+
+$ExePath = if ($targetItem.PSIsContainer) {
+    Join-Path $targetItem.FullName $PclExeName
+} else {
+    $targetItem.FullName
+}
+
+if (-not (Test-Path -LiteralPath $ExePath -PathType Leaf)) {
     Stop-WithError ('没有找到 ' + $ExePath)
 }
+if ([System.IO.Path]::GetExtension($ExePath) -ine '.exe') {
+    Stop-WithError ('不是 .exe 文件：' + $ExePath)
+}
+
+$PclDir     = Split-Path -Parent $ExePath
+$OutputPath = Join-Path $PclDir ([System.IO.Path]::GetFileNameWithoutExtension($ExePath) + ' (dl-restore).exe')
+$TmpOutput  = $OutputPath + '.tmp'
+$WorkDir    = Join-Path $env:TEMP ('pcl_dl_restore_' + [guid]::NewGuid().ToString('N'))
 
 # 提前检查输出是否被占用，避免下载、解析、扫描全部做完才失败
 if (Test-Path -LiteralPath $OutputPath) {
@@ -658,8 +699,8 @@ try {
     New-Item -ItemType Directory -Force -Path $WorkDir | Out-Null
 
     Write-Step '准备 Mono.Cecil'
-    $cecilDll = Get-CecilLibrary -WorkDir $WorkDir
-    Add-Type -Path $cecilDll
+    $cecilDll = Get-CecilLibrary -WorkDir $WorkDir -CecilDllPath $CecilDll
+    $null = [System.Reflection.Assembly]::Load([System.IO.File]::ReadAllBytes($cecilDll))
     $script:Code = [Mono.Cecil.Cil.Code]
     $script:OpCodes = [Mono.Cecil.Cil.OpCodes]
     $script:Instruction = [Mono.Cecil.Cil.Instruction]
