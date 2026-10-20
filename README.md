@@ -10,12 +10,43 @@ PCL 2.99.0.0 的本地补丁，恢复被常量折叠删除的功能：
 
 只修改这几个方法，不改动其它逻辑。
 
-## 免责声明
+## 使用
 
-1. 本脚本仅供个人学习、研究与技术交流使用，不得用于商业用途，也不得用于大规模分发、二次打包、售卖或任何形式的牟利行为。
-2. 本脚本不是 PCL 官方产物，与 PCL 开发者无关。PCL 及其相关知识产权归成都瓜皮龙科技有限公司所有；本脚本不包含、也不分发 PCL 的任何代码或二进制文件，只读取本机的 PCL 副本并修改其方法体。
-3. PCL 移除这些功能是开发者为遵守相关法律法规所做的决定。使用本脚本可能违反当地法律、法规或平台规则，请自行确认所在地区的相关规定，并承担全部后果；本脚本不构成任何形式的授权或担保。
-4. 脚本按“现状”提供，不提供任何明示或暗示的担保。使用前请备份原始 exe；因使用本脚本造成的任何直接或间接损失，由使用者自行承担。
+<details open>
+<summary><strong>GUI</strong></summary>
+
+GUI 只是套在补丁脚本外面的启动器。核心逻辑全部在 PCL.DL.RestorePatch.ps1 脚本中，GUI 本身不参与修改。
+
+从 [Release](https://github.com/ChinoKou/PCL.DL.RestorePatch/releases/latest) 下载对应版本：
+
+- **标准版**：`PCL.DL.RestorePatch.GUI.exe`，不含 Mono.Cecil，每次开始补丁时从 nuget.org 下载 Mono.Cecil 0.11.6 并校验 SHA256；
+- **离线版**：`PCL.DL.RestorePatch.GUI.WithCecil.exe`，内置 Mono.Cecil 0.11.6。
+
+1. 把 PCL 的 exe 拖进窗口，或点击“浏览…”选择；
+2. 点击“开始补丁”；
+3. 完成后会在 PCL 同目录生成恢复版 `<原文件名> (dl-restore).exe`。
+
+</details>
+
+<details>
+<summary><strong>PowerShell 脚本</strong></summary>
+
+把脚本放到 PCL 同目录直接运行，自动使用同目录的 `Plain Craft Launcher 2.exe`：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\PCL.DL.RestorePatch.ps1
+```
+
+也可以传入 exe 或目录：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\PCL.DL.RestorePatch.ps1 "D:\PCL\Plain Craft Launcher 2.exe"
+powershell -NoProfile -ExecutionPolicy Bypass -File .\PCL.DL.RestorePatch.ps1 "D:\PCL"
+```
+
+输出同样写在输入 exe 同目录。
+
+</details>
 
 ## 背景
 
@@ -63,18 +94,13 @@ End Select
 | `Invoke-CardVisibilityPatch` | `CardMinecraft.Visibility` 前的 `ldc.i4.2` 改为 `ldc.i4.0` |
 | `Invoke-ResourceInstallPatch` | 在 `ToListItem` 前插入 `TargetResourceType = ModPack` 判断：整合包用 `Install_Click`（经包装 lambda）+ `Save_Click`，其它资源保持原样 |
 
-其余函数：`Get-CecilLibrary` 下载并校验 Cecil；`Open-PclAssembly` 读取 exe 并释放内嵌程序集供解析；`Save-PatchedAssembly` 写 `*.tmp`、替换，并在写后回读校验。
+## 第三方组件
 
-## 用法
+本程序使用 Mono.Cecil 0.11.6，作者 Jb Evain，按 MIT License 分发。项目地址：https://github.com/jbevain/cecil
 
-1. 将 `PCL.DL.RestorePatch.ps1` 放到 `Plain Craft Launcher 2.exe` 同目录；
-2. 执行：
+## 免责声明
 
-   ```powershell
-   powershell -NoProfile -ExecutionPolicy Bypass -File .\PCL.DL.RestorePatch.ps1
-   ```
-
-3. 生成 `Plain Craft Launcher 2 (dl-restore).exe`，原文件不变。
-
-首次运行从 NuGet 下载 Mono.Cecil 0.11.6（固定版本 + SHA256），释放到 `%TEMP%`，运行结束后删除。
-
+1. 本脚本仅供个人学习、研究与技术交流使用，不得用于商业用途，也不得用于售卖或任何形式的牟利行为。如需二次分发，请仅限个人非商业用途，保留完整免责声明与出处，不得大规模传播或用于商业目的。
+2. 本脚本不是 PCL 官方产物，与 PCL 开发者无关。PCL 及其相关知识产权归成都瓜皮龙科技有限公司所有；本脚本不包含、也不分发 PCL 的任何代码或二进制文件，只读取本机的 PCL 副本并修改其方法体。
+3. PCL 移除这些功能是开发者为遵守相关法律法规所做的决定。使用本脚本可能违反当地法律、法规或平台规则，请自行确认所在地区的相关规定，并承担全部后果；本脚本不构成任何形式的授权或担保。
+4. 脚本按“现状”提供，不提供任何明示或暗示的担保。使用前请备份原始 exe；因使用本脚本造成的任何直接或间接损失，由使用者自行承担。
