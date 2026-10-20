@@ -653,6 +653,8 @@ function Save-PatchedAssembly {
 
 # ---------------- 主流程 ----------------
 
+Write-Host 'Open Source at https://github.com/ChinoKou/PCL.DL.RestorePatch'
+
 # 目标 exe：无参数时用脚本同目录的默认文件；有参数时接受 exe 文件或目录
 $targetPath = if ([string]::IsNullOrWhiteSpace($Path)) {
     Join-Path $PSScriptRoot $PclExeName
