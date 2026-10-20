@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup Condition="'$(Configuration)' == 'ReleaseWithCecil'">
+    <BundledCecil>true</BundledCecil>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <AssemblyName Condition="'$(Configuration)' == 'ReleaseWithCecil'">PCL.DL.RestorePatch.GUI.WithCecil</AssemblyName>
+    <AssemblyName Condition="'$(Configuration)' != 'ReleaseWithCecil'">PCL.DL.RestorePatch.GUI</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
+    <GenerateSupportedRuntime>false</GenerateSupportedRuntime>
+    <DefineConstants Condition="'$(BundledCecil)' == 'true'">$(DefineConstants);BUNDLED_CECIL</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Release' Or '$(Configuration)' == 'ReleaseWithCecil'">
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\PCL.DL.RestorePatch.ps1" Link="PCL.DL.RestorePatch.ps1">
+      <LogicalName>PCL.DL.RestorePatch.ps1</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(BundledCecil)' == 'true'">
+    <EmbeddedResource Include="$(CecilCompressedPath)" Link="Mono.Cecil.dll.deflate">
+      <LogicalName>Mono.Cecil.dll.deflate</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <Target Name="ValidateBundledInputs" BeforeTargets="PrepareForBuild"
+    Condition="'$(BundledCecil)' == 'true'">
+    <Error Condition="!Exists('$(CecilCompressedPath)')"
+      Text="BundledCecil=true 需要 CecilCompressedPath 指向压缩后的 Mono.Cecil.dll。" />
+  </Target>
+
+</Project>

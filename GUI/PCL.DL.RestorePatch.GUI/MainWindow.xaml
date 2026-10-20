@@ -1,0 +1,226 @@
+<Window x:Class="PCL.DL.RestorePatch.GUI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="PCL 下载入口补丁"
+        Height="660" Width="880" MinHeight="560" MinWidth="740"
+        WindowStartupLocation="CenterScreen"
+        FontFamily="Microsoft YaHei UI"
+        TextOptions.TextFormattingMode="Display"
+        UseLayoutRounding="True"
+        AllowDrop="True"
+        Closing="Window_Closing"
+        Drop="Window_Drop"
+        DragOver="Window_DragOver"
+        DragLeave="Window_DragLeave">
+
+    <Window.Background>
+        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#F8FAFC" Offset="0" />
+            <GradientStop Color="#EDF3FF" Offset="1" />
+        </LinearGradientBrush>
+    </Window.Background>
+
+    <Window.Resources>
+        <SolidColorBrush x:Key="AccentBrush" Color="#2563EB" />
+        <SolidColorBrush x:Key="AccentHoverBrush" Color="#1D4ED8" />
+        <SolidColorBrush x:Key="AccentPressedBrush" Color="#1E40AF" />
+        <SolidColorBrush x:Key="TextBrush" Color="#0F172A" />
+        <SolidColorBrush x:Key="MutedTextBrush" Color="#64748B" />
+        <SolidColorBrush x:Key="LineBrush" Color="#E2E8F0" />
+        <DropShadowEffect x:Key="CardShadow" x:Shared="False"
+                          BlurRadius="26" ShadowDepth="4" Direction="270"
+                          Opacity="0.07" Color="#0F172A" />
+
+        <Style x:Key="PrimaryButton" TargetType="Button">
+            <Setter Property="Height" Value="42" />
+            <Setter Property="Padding" Value="24,0" />
+            <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ButtonBorder" Background="{TemplateBinding Background}"
+                                CornerRadius="10" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="{StaticResource AccentHoverBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="{StaticResource AccentPressedBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="#E2E8F0" />
+                                <Setter Property="Foreground" Value="#94A3B8" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SecondaryButton" TargetType="Button">
+            <Setter Property="Height" Value="36" />
+            <Setter Property="Padding" Value="18,0" />
+            <Setter Property="Background" Value="#F1F5F9" />
+            <Setter Property="Foreground" Value="#334155" />
+            <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ButtonBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="#E2E8F0" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="#CBD5E1" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.5" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="30,26,30,24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="2,0,2,20" VerticalAlignment="Center">
+            <TextBlock Text="PCL 下载入口补丁" FontSize="25" FontWeight="SemiBold"
+                       Foreground="{StaticResource TextBrush}" />
+            <TextBlock Text="恢复 PCL 2.99.x 的下载入口与整合包安装" FontSize="12"
+                       Foreground="{StaticResource MutedTextBrush}" Margin="0,4,0,0" />
+        </StackPanel>
+
+        <Border x:Name="DropCard" Grid.Row="1" Background="White" CornerRadius="16" Padding="20"
+                BorderBrush="#E2E8F0" BorderThickness="1"
+                Effect="{StaticResource CardShadow}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Margin="2,0,12,0" VerticalAlignment="Center">
+                        <TextBlock Text="目标程序"
+                                   Foreground="{StaticResource TextBrush}"
+                                   FontSize="14" FontWeight="SemiBold" />
+                        <TextBlock Text="选择 PCL 的 exe，也可以直接拖入"
+                                   Foreground="{StaticResource MutedTextBrush}"
+                                   FontSize="12" Margin="0,4,0,0" />
+                    </StackPanel>
+                    <Button x:Name="BrowseButton" Grid.Column="1" Content="浏览…"
+                            Width="100" Height="38" VerticalAlignment="Center"
+                            Style="{StaticResource SecondaryButton}"
+                            Click="BrowseButton_Click" />
+                </Grid>
+
+                <Border x:Name="TargetDisplayBorder" Grid.Row="1" Margin="2,16,2,0"
+                        Padding="14,10" Background="#F8FAFC"
+                        BorderBrush="#EEF2F7" BorderThickness="1" CornerRadius="10">
+                    <Grid>
+                        <StackPanel x:Name="TargetDisplay" Visibility="Collapsed">
+                            <TextBlock x:Name="TargetFileName" FontSize="14"
+                                       FontWeight="SemiBold" Foreground="#0F172A"
+                                       TextTrimming="CharacterEllipsis" />
+                            <TextBlock x:Name="TargetDirectory" FontSize="12"
+                                       Foreground="#64748B" Margin="0,3,0,0"
+                                       TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                        <TextBlock x:Name="TargetPlaceholder" Text="尚未选择文件"
+                                   Foreground="#94A3B8" FontSize="13"
+                                   VerticalAlignment="Center" />
+                    </Grid>
+                </Border>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="2" Margin="4,16,4,12">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <Ellipse x:Name="StatusDot" Width="8" Height="8" Fill="#94A3B8"
+                         Margin="0,0,8,0" VerticalAlignment="Center" />
+                <TextBlock x:Name="StatusText" Text="拖入或选择 PCL exe 后开始"
+                           Foreground="{StaticResource MutedTextBrush}" FontSize="13" />
+            </StackPanel>
+        </Grid>
+
+        <Border Grid.Row="3" Background="#0B1220" CornerRadius="16"
+                Effect="{StaticResource CardShadow}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <Grid Grid.Row="0" Margin="18,14,18,0">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Width="3" Height="14" CornerRadius="2" Background="#3B82F6"
+                                Margin="0,0,10,0" />
+                        <TextBlock Text="处理日志" Foreground="#94A3B8" FontSize="12"
+                                   FontWeight="SemiBold" />
+                    </StackPanel>
+                    <ProgressBar x:Name="RunProgress" Width="90" Height="3"
+                                 HorizontalAlignment="Right" VerticalAlignment="Center"
+                                 IsIndeterminate="True" Visibility="Collapsed"
+                                 Foreground="#60A5FA" Background="#1E293B"
+                                 BorderThickness="0" />
+                </Grid>
+                <TextBox x:Name="LogBox" Grid.Row="1" Margin="8,8,8,10"
+                         IsReadOnly="True" AcceptsReturn="True"
+                         TextWrapping="NoWrap" VerticalScrollBarVisibility="Auto"
+                         HorizontalScrollBarVisibility="Auto"
+                         FontFamily="Consolas" FontSize="12"
+                         Background="Transparent" Foreground="#CBD5E1"
+                         BorderThickness="0" Padding="10"
+                         SelectionBrush="#334155" FocusVisualStyle="{x:Null}" />
+                <TextBlock x:Name="LogPlaceholder" Grid.Row="1"
+                           Text="选择 PCL exe 并开始后，这里会显示处理日志"
+                           Foreground="#64748B" FontSize="12"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                           IsHitTestVisible="False" />
+            </Grid>
+        </Border>
+
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right"
+                    Margin="0,18,0,0">
+            <Button x:Name="OpenOutputButton" Content="打开输出目录"
+                    Width="126" Height="42" Margin="0,0,10,0"
+                    Style="{StaticResource SecondaryButton}"
+                    Visibility="Collapsed" Click="OpenOutputButton_Click" />
+            <Button x:Name="StartButton" Content="开始补丁"
+                    Width="132" IsDefault="True"
+                    IsEnabled="False" Style="{StaticResource PrimaryButton}"
+                    Click="StartButton_Click" />
+        </StackPanel>
+    </Grid>
+</Window>
