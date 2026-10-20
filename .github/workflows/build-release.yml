@@ -1,0 +1,65 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - "*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: "10.0"
+
+      - name: Build GUI variants
+        shell: pwsh
+        run: ./GUI/build.ps1
+
+      - name: Verify artifacts
+        shell: pwsh
+        run: |
+          $files = @(
+            'GUI/PCL.DL.RestorePatch.GUI/bin/Release/net48/publish/PCL.DL.RestorePatch.GUI.exe',
+            'GUI/PCL.DL.RestorePatch.GUI/bin/ReleaseWithCecil/net48/publish/PCL.DL.RestorePatch.GUI.WithCecil.exe'
+          )
+          foreach ($file in $files) {
+            if (-not (Test-Path -LiteralPath $file -PathType Leaf)) {
+              throw "Missing artifact: $file"
+            }
+            $item = Get-Item -LiteralPath $file
+            if ($item.Length -eq 0) {
+              throw "Empty artifact: $file"
+            }
+            Write-Host ($item.FullName + ' (' + $item.Length + ' bytes)')
+          }
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: PCL.DL.RestorePatch-GUI
+          path: |
+            GUI/PCL.DL.RestorePatch.GUI/bin/Release/net48/publish/PCL.DL.RestorePatch.GUI.exe
+            GUI/PCL.DL.RestorePatch.GUI/bin/ReleaseWithCecil/net48/publish/PCL.DL.RestorePatch.GUI.WithCecil.exe
+          if-no-files-found: error
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          files: |
+            GUI/PCL.DL.RestorePatch.GUI/bin/Release/net48/publish/PCL.DL.RestorePatch.GUI.exe
+            GUI/PCL.DL.RestorePatch.GUI/bin/ReleaseWithCecil/net48/publish/PCL.DL.RestorePatch.GUI.WithCecil.exe
